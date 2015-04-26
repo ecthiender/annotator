@@ -6,21 +6,44 @@ var util = require('../util');
 var $ = util.$;
 var _t = util.gettext;
 
+// our sample JSON-LD
+var json_ld = {
+    "@context": "http://www.w3.org/ns/oa-context-20130208.json",
+    "@type" : "oa:SemanticTag",
+    "@id": "http://www.example.org/annotations/",
+    "page": ""
+};
+
 // Take an array of tags and turn it into a string suitable for display in the
 // viewer.
 function stringifyTags(array) {
-    return array.join(" ");
+    var tag_names = [];
+    for(var i in array) {
+      tag_names.push(array[i]["page"]);
+    }
+    return tag_names.join(" ");
 }
+
 
 // Take a string from the tags input as an argument, and return an array of
 // tags.
 function parseTags(string) {
-    string = $.trim(string);
-    var tags = [];
+	  string = $.trim(string);
+    var tags = [], tag_names = [];
 
     if (string) {
-        tags = string.split(/\s+/);
+        tag_names = string.split(/\s+/);
     }
+
+	  for(var i in tag_names) {
+        // prepare each tag with the sample JSON-LD
+		    var tag = $.extend({}, json_ld); // shallow copy for now should work
+        // prepare the @id field appropriately
+        tag["@id"] += "tag" + i;
+        // page attr of the tag is the given string by the user
+        tag["page"] = tag_names[i];
+        tags.push(tag);
+	  }
 
     return tags;
 }
@@ -47,7 +70,7 @@ exports.viewerExtension = function viewerExtension(v) {
             field.addClass('annotator-tags').html(function () {
                 return $.map(annotation.tags, function (tag) {
                     return '<span class="annotator-tag">' +
-                        util.escapeHtml(tag) +
+                        util.escapeHtml(JSON.stringify(tag)) +
                         '</span>';
                 }).join(' ');
             });
